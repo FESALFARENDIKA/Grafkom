@@ -1,0 +1,207 @@
+import pygame
+import math
+
+# =========================
+# INISIALISASI
+# =========================
+pygame.init()
+
+WIDTH = 1000
+HEIGHT = 700
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Simulasi Kurva Parabola Parametrik")
+
+clock = pygame.time.Clock()
+
+font = pygame.font.SysFont("Arial", 18)
+font_small = pygame.font.SysFont("Arial", 14)
+
+# =========================
+# WARNA
+# =========================
+BG = (20, 20, 30)
+GRID = (60, 60, 60)
+
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 120)
+RED = (255, 80, 80)
+YELLOW = (255, 255, 0)
+
+# =========================
+# PARAMETER PARABOLA
+# =========================
+xp = 100
+yp = 600
+a = 1.5
+
+t = -20
+
+points = []
+
+running = True
+
+while running:
+
+    screen.fill(BG)
+
+    # =========================
+    # EVENT
+    # =========================
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # =========================
+    # GRID + ANGKA KOORDINAT
+    # =========================
+    for x_grid in range(0, WIDTH, 50):
+
+        pygame.draw.line(
+            screen,
+            GRID,
+            (x_grid, 0),
+            (x_grid, HEIGHT)
+        )
+
+        label = font_small.render(
+            str(x_grid),
+            True,
+            WHITE
+        )
+
+        screen.blit(label, (x_grid + 2, 605))
+
+    for y_grid in range(0, HEIGHT, 50):
+
+        pygame.draw.line(
+            screen,
+            GRID,
+            (0, y_grid),
+            (WIDTH, y_grid)
+        )
+
+        nilai_y = 600 - y_grid
+
+        label = font_small.render(
+            str(nilai_y),
+            True,
+            WHITE
+        )
+
+        screen.blit(label, (105, y_grid))
+
+    # =========================
+    # SUMBU X DAN Y
+    # =========================
+    pygame.draw.line(
+        screen,
+        WHITE,
+        (0, 600),
+        (WIDTH, 600),
+        3
+    )
+
+    pygame.draw.line(
+        screen,
+        WHITE,
+        (100, 0),
+        (100, HEIGHT),
+        3
+    )
+
+    # Label sumbu
+    screen.blit(font.render("X", True, YELLOW), (970, 610))
+    screen.blit(font.render("Y", True, YELLOW), (110, 10))
+
+    # =========================
+    # PERSAMAAN PARAMETRIK
+    # =========================
+    x = xp + (2 * a * t * 10)
+    y = yp - a * (t ** 2)
+
+    points.append((x, y))
+
+    # =========================
+    # LINTASAN PARABOLA
+    # =========================
+    for p in points:
+        pygame.draw.circle(
+            screen,
+            GREEN,
+            (int(p[0]), int(p[1])),
+            3
+        )
+
+    # =========================
+    # TITIK BERGERAK
+    # =========================
+    pygame.draw.circle(
+        screen,
+        RED,
+        (int(x), int(y)),
+        10
+    )
+
+    # =========================
+    # LABEL KOORDINAT TITIK
+    # =========================
+    koordinat = f"({x:.1f}, {600-y:.1f})"
+
+    text_koordinat = font.render(
+        koordinat,
+        True,
+        YELLOW
+    )
+
+    screen.blit(
+        text_koordinat,
+        (int(x)+15, int(y)-15)
+    )
+
+    # =========================
+    # INFORMASI AKADEMIK
+    # =========================
+    judul = font.render(
+        "SIMULASI PARABOLA PARAMETRIK",
+        True,
+        WHITE
+    )
+
+    screen.blit(judul, (350, 20))
+
+    rumus1 = font.render(
+        "x = xp + 2at(10)",
+        True,
+        WHITE
+    )
+
+    rumus2 = font.render(
+        "y = yp - at²",
+        True,
+        WHITE
+    )
+
+    nilai_t = font.render(
+        f"t = {t:.2f}",
+        True,
+        YELLOW
+    )
+
+    screen.blit(rumus1, (20, 20))
+    screen.blit(rumus2, (20, 50))
+    screen.blit(nilai_t, (20, 80))
+
+    # =========================
+    # UPDATE PARAMETER
+    # =========================
+    t += 0.1
+
+    if t > 20:
+        t = -20
+        points.clear()
+
+    pygame.display.update()
+    clock.tick(60)
+
+pygame.quit()

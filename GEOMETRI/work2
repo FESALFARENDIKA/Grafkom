@@ -1,0 +1,399 @@
+import pygame
+
+# =====================================
+# INISIALISASI
+# =====================================
+pygame.init()
+
+WIDTH = 1400
+HEIGHT = 800
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Representasi Parametrik Parabola")
+
+clock = pygame.time.Clock()
+
+font = pygame.font.SysFont("Arial", 20)
+font_small = pygame.font.SysFont("Arial", 14)
+
+# =====================================
+# WARNA
+# =====================================
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (220, 220, 220)
+
+BLUE = (40, 90, 255)
+RED = (255, 60, 60)
+GREEN = (0, 180, 0)
+
+# =====================================
+# SISTEM KOORDINAT
+# =====================================
+origin_x = 250
+origin_y = HEIGHT // 2
+
+# =====================================
+# PARAMETER PARABOLA
+# =====================================
+a = 1.5
+
+scale = 3
+
+t_min = -15
+t_max = 15
+
+t = t_min
+
+dt = 0.1
+
+play = True
+
+points = []
+
+running = True
+
+# =====================================
+# LOOP UTAMA
+# =====================================
+while running:
+
+    screen.fill(WHITE)
+
+    # =====================================
+    # EVENT
+    # =====================================
+    for event in pygame.event.get():
+
+        if event.type == pygame.QUIT:
+            running = False
+
+        if event.type == pygame.KEYDOWN:
+
+            # Play / Pause
+            if event.key == pygame.K_SPACE:
+                play = not play
+
+            # Maju
+            elif event.key == pygame.K_RIGHT:
+                t = min(t + dt, t_max)
+
+            # Mundur
+            elif event.key == pygame.K_LEFT:
+                t = max(t - dt, t_min)
+
+            # Reset
+            elif event.key == pygame.K_r:
+                t = t_min
+                points.clear()
+
+            # Awal
+            elif event.key == pygame.K_HOME:
+                t = t_min
+                points.clear()
+
+            # Akhir
+            elif event.key == pygame.K_END:
+                t = t_max
+
+            # Percepat
+            elif event.key == pygame.K_UP:
+                dt += 0.05
+
+            # Perlambat
+            elif event.key == pygame.K_DOWN:
+                dt = max(0.05, dt - 0.05)
+
+    # =====================================
+    # GRID
+    # =====================================
+    for x in range(0, WIDTH, 50):
+
+        pygame.draw.line(
+            screen,
+            GRAY,
+            (x, 0),
+            (x, HEIGHT)
+        )
+
+    for y in range(0, HEIGHT, 50):
+
+        pygame.draw.line(
+            screen,
+            GRAY,
+            (0, y),
+            (WIDTH, y)
+        )
+
+    # =====================================
+    # SUMBU X
+    # =====================================
+    pygame.draw.line(
+        screen,
+        BLACK,
+        (0, origin_y),
+        (WIDTH, origin_y),
+        3
+    )
+
+    # =====================================
+    # SUMBU Y
+    # =====================================
+    pygame.draw.line(
+        screen,
+        BLACK,
+        (origin_x, 0),
+        (origin_x, HEIGHT),
+        3
+    )
+
+    # =====================================
+    # LABEL KOORDINAT X
+    # =====================================
+    for x in range(0, WIDTH, 50):
+
+        nilai_x = int((x - origin_x) / scale)
+
+        text = font_small.render(
+            str(nilai_x),
+            True,
+            BLACK
+        )
+
+        screen.blit(
+            text,
+            (x + 2, origin_y + 5)
+        )
+
+    # =====================================
+    # LABEL KOORDINAT Y
+    # =====================================
+    for y in range(0, HEIGHT, 50):
+
+        nilai_y = int((origin_y - y) / scale)
+
+        text = font_small.render(
+            str(nilai_y),
+            True,
+            BLACK
+        )
+
+        screen.blit(
+            text,
+            (origin_x + 5, y)
+        )
+
+    screen.blit(
+        font.render("X", True, BLACK),
+        (WIDTH - 30, origin_y + 10)
+    )
+
+    screen.blit(
+        font.render("Y", True, BLACK),
+        (origin_x + 10, 10)
+    )
+
+    # =====================================
+    # PERSAMAAN PARAMETRIK
+    # x = a*t²
+    # y = 2*a*t
+    # =====================================
+    x_math = a * (t ** 2)
+    y_math = 2 * a * t
+
+    x_screen = origin_x + (x_math * scale)
+    y_screen = origin_y - (y_math * scale)
+
+    if play:
+        points.append((x_screen, y_screen))
+
+    # =====================================
+    # LINTASAN
+    # =====================================
+    for p in points:
+
+        pygame.draw.circle(
+            screen,
+            BLUE,
+            (int(p[0]), int(p[1])),
+            2
+        )
+
+    # =====================================
+    # VERTEX
+    # =====================================
+    pygame.draw.circle(
+        screen,
+        GREEN,
+        (origin_x, origin_y),
+        8
+    )
+
+    screen.blit(
+        font.render(
+            "Vertex (0,0)",
+            True,
+            GREEN
+        ),
+        (origin_x + 10, origin_y + 10)
+    )
+
+    # =====================================
+    # GARIS BANTU
+    # =====================================
+    pygame.draw.line(
+        screen,
+        GRAY,
+        (int(x_screen), origin_y),
+        (int(x_screen), int(y_screen)),
+        1
+    )
+
+    pygame.draw.line(
+        screen,
+        GRAY,
+        (origin_x, int(y_screen)),
+        (int(x_screen), int(y_screen)),
+        1
+    )
+
+    # =====================================
+    # TITIK BERGERAK
+    # =====================================
+    pygame.draw.circle(
+        screen,
+        RED,
+        (int(x_screen), int(y_screen)),
+        10
+    )
+
+    # =====================================
+    # LABEL KOORDINAT TITIK
+    # =====================================
+    koordinat = (
+        f"({x_math:.2f}, {y_math:.2f})"
+    )
+
+    screen.blit(
+        font.render(
+            koordinat,
+            True,
+            RED
+        ),
+        (int(x_screen) + 15,
+         int(y_screen) - 15)
+    )
+
+    # =====================================
+    # JUDUL
+    # =====================================
+    screen.blit(
+        font.render(
+            "REPRESENTASI PARAMETRIK PARABOLA - GRAFIKA KOMPUTER",
+            True,
+            BLACK
+        ),
+        (420, 20)
+    )
+
+    # =====================================
+    # INFORMASI
+    # =====================================
+    screen.blit(
+        font.render(
+            "x = a*t²",
+            True,
+            BLACK
+        ),
+        (20, 30)
+    )
+
+    screen.blit(
+        font.render(
+            "y = 2*a*t",
+            True,
+            BLACK
+        ),
+        (20, 65)
+    )
+
+    status = "PLAY" if play else "PAUSE"
+
+    screen.blit(
+        font.render(
+            f"Status : {status}",
+            True,
+            RED
+        ),
+        (20, 120)
+    )
+
+    screen.blit(
+        font.render(
+            f"t = {t:.2f}",
+            True,
+            BLACK
+        ),
+        (20, 160)
+    )
+
+    screen.blit(
+        font.render(
+            f"dt = {dt:.2f}",
+            True,
+            BLACK
+        ),
+        (20, 200)
+    )
+
+    screen.blit(
+        font.render(
+            f"a = {a}",
+            True,
+            BLACK
+        ),
+        (20, 240)
+    )
+
+    # =====================================
+    # PETUNJUK
+    # =====================================
+    petunjuk = [
+        "SPACE : Play / Pause",
+        "RIGHT : Maju",
+        "LEFT  : Mundur",
+        "HOME  : Awal",
+        "END   : Akhir",
+        "R     : Reset",
+        "UP    : Percepat",
+        "DOWN  : Perlambat"
+    ]
+
+    for i, teks in enumerate(petunjuk):
+
+        screen.blit(
+            font.render(
+                teks,
+                True,
+                BLACK
+            ),
+            (1100, 30 + i * 35)
+        )
+
+    # =====================================
+    # UPDATE PARAMETER
+    # =====================================
+    if play:
+
+        t += dt
+
+        if t > t_max:
+
+            t = t_max
+            play = False
+
+    pygame.display.update()
+
+    clock.tick(60)
+
+pygame.quit()
