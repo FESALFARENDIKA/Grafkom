@@ -1402,9 +1402,13 @@ class KurvaKonikApp:
             theta1, theta2 = angles
             start = math.degrees(theta1)
             end = math.degrees(theta2)
-            extent = (end - start) % 360
-            if extent > 180:
-                extent -= 360
+            
+            extent = end - start
+                while extent <= -180:
+                    extent += 360
+                
+                while extent > 180:
+                    extent -= 360
 
             arc_r = 70
             start_angle = (-start) % 360
@@ -1420,9 +1424,9 @@ class KurvaKonikApp:
                 width=4
             )
             self.canvas.create_text(
-                sx0 + arc_r + 12,
-                sy0 - 8,
-                text=f"Δθ={abs(extent):.2f}",
+                sx0 + arc_r + 25,
+                sy0 - 25,
+                text=f"Δθ={abs(extent):.2f}°",
                 fill=self.purple,
                 anchor="w",
                 font=("Arial", 9, "bold")
@@ -1443,14 +1447,16 @@ class KurvaKonikApp:
                 outline=self.purple,
                 width=4
             )
-            self.canvas.create_text(
-                sx0 + arc_r + 12,
-                sy0 - 8,
-                text=f"θ={theta:.2f}",
-                fill=self.purple,
-                anchor="w",
-                font=("Arial", 9, "bold")
-            )
+                deg = math.degrees(theta)
+
+                self.canvas.create_text(
+                    sx0 + arc_r + 12,
+                    sy0 - 8,
+                    text=f"{deg:.1f}°",
+                    fill=self.purple,
+                    anchor="w",
+                    font=("Arial", 9, "bold")
+                )
 
     def draw_title(self):
         self.canvas.create_text(
