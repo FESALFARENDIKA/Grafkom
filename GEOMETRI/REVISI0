@@ -356,7 +356,7 @@ class KurvaKonikApp:
             self.add_entry("t akhir", "100")
             self.add_entry("Interval / step", "2.5")
             self.formula_label.config(
-                text="x = xc + t\ny = yc + a t²"
+                text="x = xc + a t²\ny = yc + 2 a t"
             )
 
         elif curve == "Hiperbola":
@@ -367,10 +367,10 @@ class KurvaKonikApp:
             self.add_entry("Interval / step", "0.05")
             self.formula_label.config(
                 text=(
-                    "Kanan: x = xc + a cosh(t)\n"
-                    "Kiri : x = xc - a cosh(t)\n"
-                    "y = yc + b sinh(t)\n"
-                    "t=0 menunjukkan vertex pada setiap cabang"
+                    "Kanan: x = xc + a sec(t)\n"
+                    "Kiri : x = xc - a sec(t)\n"
+                    "y = yc + b tan(t)\n"
+                    "t ∈ (-π/2, π/2)"
                 )
             )
 
@@ -415,11 +415,11 @@ class KurvaKonikApp:
         if widget is None:
             return False
 
-        # Entry angka/teks
+        # Tk Entry: kolom input angka
         if isinstance(widget, tk.Entry):
             return True
 
-        # ttk/legacy Combobox / Spinbox (nama class biasanya mengandung string ini)
+        # ttk/legacy Combobox bisa punya class berbeda, cek nama class juga aman.
         cls = widget.__class__.__name__.lower()
         if "entry" in cls or "combobox" in cls or "spinbox" in cls:
             return True
@@ -499,19 +499,20 @@ class KurvaKonikApp:
             formula = f"x={xc}+{a}cos({t:.2f}), y={yc}+{b}sin({t:.2f})"
 
         elif curve == "Parabola":
-            x = xc + t
-            y = yc + a * (t ** 2)
-            formula = f"x={xc}+{t:.2f}, y={yc}+{a}({t:.2f})²"
+            x = xc + a * (t ** 2)
+            y = yc + 2 * a * t
+            formula = f"x={xc}+{a}({t:.2f})², y={yc}+2·{a}·{t:.2f}"
 
         elif curve == "Hiperbola":
-            y = yc + b * math.sinh(t)
-
+            sec_t = 1 / math.cos(t)
+            tan_t = math.tan(t)
+            y = yc + b * tan_t
             if branch == "kiri":
-                x = xc - a * math.cosh(t)
-                formula = f"x={xc}-{a}cosh({t:.2f}), y={yc}+{b}sinh({t:.2f})"
-            else:
-                x = xc + a * math.cosh(t)
-                formula = f"x={xc}+{a}cosh({t:.2f}), y={yc}+{b}sinh({t:.2f})"
+                x = xc - a * sec_t    
+                formula = f"x={xc}-{a}sec({t:.2f}), y={yc}+{b}tan({t:.2f})"
+            else:    
+                x = xc + a * sec_t    
+                formula = f"x={xc}+{a}sec({t:.2f}), y={yc}+{b}tan({t:.2f})"
 
         else:
             x = 0
@@ -1429,13 +1430,9 @@ class KurvaKonikApp:
             theta1, theta2 = angles
             start = math.degrees(theta1)
             end = math.degrees(theta2)
-            
-            extent = end - start
-            while extent <= -180:
-                    extent += 360
-                
-            while extent > 180:
-                    extent -= 360
+            extent = (end - start) % 360
+            if extent > 180:
+                extent -= 360
 
             arc_r = 70
             start_angle = (-start) % 360
@@ -1451,9 +1448,9 @@ class KurvaKonikApp:
                 width=4
             )
             self.canvas.create_text(
-                sx0 + arc_r + 25,
-                sy0 - 25,
-                text=f"Δθ={abs(extent):.2f}°",
+                sx0 + arc_r + 12,
+                sy0 - 8,
+                text=f"Δθ={abs(extent):.2f}",
                 fill=self.purple,
                 anchor="w",
                 font=("Arial", 9, "bold")
@@ -1474,16 +1471,14 @@ class KurvaKonikApp:
                 outline=self.purple,
                 width=4
             )
-            deg = math.degrees(theta)
-
             self.canvas.create_text(
-                    sx0 + arc_r + 12,
-                    sy0 - 8,
-                    text=f"{deg:.1f}°",
-                    fill=self.purple,
-                    anchor="w",
-                    font=("Arial", 9, "bold")
-                )
+                sx0 + arc_r + 12,
+                sy0 - 8,
+                text=f"θ={theta:.2f}",
+                fill=self.purple,
+                anchor="w",
+                font=("Arial", 9, "bold")
+            )
 
     def draw_title(self):
         self.canvas.create_text(
