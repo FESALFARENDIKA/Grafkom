@@ -495,7 +495,7 @@ class KurvaKonikApp:
         entry.insert(0, value)
 
     # ==========================================================
-    # RUMUS
+    # RUMUS PARABOLA DAN HiPERBOLA MENYESUAIKAN DENGAN COMPT.
     # ==========================================================
     def calc_point(self, curve, t, xc, yc, r=None, a=None, b=None, branch="utama"):
         if curve == "Lingkaran":
