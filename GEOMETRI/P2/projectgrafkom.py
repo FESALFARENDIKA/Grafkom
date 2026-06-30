@@ -386,21 +386,21 @@ class KurvaKonikApp:
             self.add_entry("t akhir", "100")
             self.add_entry("Interval / step", "2.5")
             self.formula_label.config(
-                text="x = xc + t\ny = yc + a t²"
+                text="x = xc + 2 a t\ny = yc + a t²"
             )
 
         elif curve == "Hiperbola":
             self.add_entry("Parameter a", "45")
             self.add_entry("Parameter b", "35")
-            self.add_entry("t awal", "-2")
-            self.add_entry("t akhir", "2")
+            self.add_entry("t awal", "-1.4")
+            self.add_entry("t akhir", "1.4")
             self.add_entry("Interval / step", "0.05")
             self.formula_label.config(
                 text=(
-                    "Kanan: x = xc + a cosh(t)\n"
-                    "Kiri : x = xc - a cosh(t)\n"
-                    "y = yc + b sinh(t)\n"
-                    "t=0 menunjukkan vertex pada setiap cabang"
+                    "Kanan: x = xc + a sec(t)\n"
+                    "Kiri : x = xc - a sec(t)\n"
+                    "y = yc + b tan(t)\n"
+                    "Cabang kanan t ∈ (-π/2, π/2)"
                 )
             )
 
@@ -429,7 +429,7 @@ class KurvaKonikApp:
         elif "a" in label.lower() or "b" in label.lower() or "r" in label.lower():
             from_, to, res = 0.01, 300, 0.1
             if "Parabola" in self.current_curve.get() and "a" in label.lower():
-                from_, to, res = -0.1, 0.1, 0.001
+                from_, to, res = -10, 10, 0.1
 
         scale = tk.Scale(row, from_=from_, to=to, resolution=res, orient="horizontal", 
                          bg=self.panel_bg, highlightthickness=0, showvalue=0)
@@ -468,32 +468,32 @@ class KurvaKonikApp:
             if curve == "Lingkaran":
                 r = float(self.inputs["Jari-jari r"].get())
                 step = float(self.inputs["Interval / step"].get())
-                c_text = f"Pusat: ({cx}, {cy})\nJari-jari: {r}\nEksentrisitas: 0\nFokus: ({cx}, {cy})"
+                c_text = f"Karakteristik & Efek Parameter:\n- r ({r}): Menentukan besaran/jari-jari kurva.\n- Fokus berada di pusat ({cx}, {cy}).\n- Eksentrisitas e=0 (simetri bundar sempurna)."
                 n = int(2*math.pi/step) if step>0 else 0
-                s_text = f"Titik: ~{n}\nStep={step} -> {'Mulus' if n>40 else 'Kasar (poligon)'}"
+                s_text = f"Analisis Step (Trade-off):\n- Step besar (>0.5): Kurva membentuk poligon karena jarak sudut rad terlalu jauh.\n- Step kecil: Mulus tapi komputasi ({n} titik) berat.\n-> Visual saat ini: {'MULUS' if n>40 else 'POLIGON/KASAR'}."
             elif curve == "Elips":
                 a = float(self.inputs["Parameter a"].get())
                 b = float(self.inputs["Parameter b"].get())
                 step = float(self.inputs["Interval / step"].get())
                 c = math.sqrt(abs(a*a - b*b))
                 e = c/max(a,b) if max(a,b)>0 else 0
-                c_text = f"Pusat: ({cx}, {cy})\na={a}, b={b}\nc={c:.2f}, e={e:.3f}"
+                c_text = f"Karakteristik & Efek Parameter:\n- a ({a}): Jari-jari horizontal.\n- b ({b}): Jari-jari vertikal.\n- Fokus berjarak c={c:.2f} dari pusat. e={e:.3f} (0<e<1)."
                 n = int(2*math.pi/step) if step>0 else 0
-                s_text = f"Titik: ~{n}\nStep={step} -> {'Mulus' if n>40 else 'Kasar (poligon)'}"
+                s_text = f"Analisis Step (Trade-off):\n- Step besar (>0.5): Kurva terpotong menjadi garis lurus (poligon).\n- Step kecil: Render halus namun lag pada kalkulasi iteratif.\n-> Visual saat ini: {'MULUS' if n>40 else 'POLIGON/KASAR'}."
             elif curve == "Parabola":
                 a = float(self.inputs["Parameter a"].get())
                 step = float(self.inputs["Interval / step"].get())
                 p = 1/(4*a) if a!=0 else 0
-                c_text = f"Vertex: ({cx}, {cy})\np={p:.2f}\nFokus: ({cx}, {cy+p:.2f})"
-                s_text = f"Step={step} -> {'Kasar' if step>5 else 'Mulus'}"
+                c_text = f"Karakteristik & Efek Parameter:\n- a ({a}): Menentukan tingkat kecekungan / lebar bukaan.\n- Vertex di ({cx}, {cy}).\n- Jarak Fokus p={p:.2f} di ({cx}, {cy+p:.2f}). e=1."
+                s_text = f"Analisis Step (Trade-off):\n- Parabola tak berhingga. Step memengaruhi delta x. Step besar ({step}) membuat titik renggang & kaku.\n- Step kecil memperberat memori array.\n-> Visual saat ini: {'KASAR' if step>2 else 'MULUS'}."
             elif curve == "Hiperbola":
                 a = float(self.inputs["Parameter a"].get())
                 b = float(self.inputs["Parameter b"].get())
                 step = float(self.inputs["Interval / step"].get())
                 c = math.sqrt(a*a + b*b)
                 e = c/a if a>0 else 0
-                c_text = f"Pusat: ({cx}, {cy})\nc={c:.2f}, e={e:.3f}"
-                s_text = f"Step={step} -> {'Cepat' if step>0.1 else 'Berat (presisi)'}"
+                c_text = f"Karakteristik & Efek Parameter:\n- a ({a}): Jarak pusat ke puncak.\n- b ({b}): Mengatur kemiringan asimtot.\n- Fokus di c={c:.2f}. e={e:.3f} (e>1)."
+                s_text = f"Analisis Step (Trade-off):\n- cosh/sinh naik eksponensial. Step besar menghasilkan loncatan koordinat yang drastis di ujung.\n- Step kecil lambat di render tapi lengkungan presisi.\n-> Visual saat ini: {'AKURAT/BERAT' if step<0.1 else 'KASAR/CEPAT'}."
             
             if hasattr(self, 'char_label'):
                 self.char_label.config(text=c_text)
@@ -610,19 +610,19 @@ class KurvaKonikApp:
             formula = f"x={xc}+{a}cos({t:.2f}), y={yc}+{b}sin({t:.2f})"
 
         elif curve == "Parabola":
-            x = xc + t
+            x = xc + 2 * a * t
             y = yc + a * (t ** 2)
-            formula = f"x={xc}+{t:.2f}, y={yc}+{a}({t:.2f})²"
+            formula = f"x={xc}+2*{a}({t:.2f}), y={yc}+{a}({t:.2f})²"
 
         elif curve == "Hiperbola":
-            y = yc + b * math.sinh(t)
+            y = yc + b * math.tan(t)
 
             if branch == "kiri":
-                x = xc - a * math.cosh(t)
-                formula = f"x={xc}-{a}cosh({t:.2f}), y={yc}+{b}sinh({t:.2f})"
+                x = xc - a / math.cos(t)
+                formula = f"x={xc}-{a}sec({t:.2f}), y={yc}+{b}tan({t:.2f})"
             else:
-                x = xc + a * math.cosh(t)
-                formula = f"x={xc}+{a}cosh({t:.2f}), y={yc}+{b}sinh({t:.2f})"
+                x = xc + a / math.cos(t)
+                formula = f"x={xc}+{a}sec({t:.2f}), y={yc}+{b}tan({t:.2f})"
 
         else:
             x = 0
@@ -700,8 +700,8 @@ class KurvaKonikApp:
         elif curve == "Hiperbola":
             a = self.get_value("Parameter a", 45)
             b = self.get_value("Parameter b", 35)
-            t_start = self.get_value("t awal", -2)
-            t_end = self.get_value("t akhir", 2)
+            t_start = self.get_value("t awal", -1.4)
+            t_end = self.get_value("t akhir", 1.4)
 
             if a <= 0 or b <= 0:
                 raise ValueError("Parameter a dan b harus lebih dari 0.")
