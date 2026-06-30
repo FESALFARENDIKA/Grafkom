@@ -1616,17 +1616,17 @@ class KurvaKonikApp:
             # Logika sebelumnya membuatnya “terbalik”, jadi hapus negasi.
             arc_r = 70
             start_angle = start % 360
-            self.canvas.create_arc(
-                sx0 - arc_r,
-                sy0 - arc_r,
-                sx0 + arc_r,
-                sy0 + arc_r,
-                start=start_angle,
-                extent=extent,
-                style=tk.ARC,
-                outline=self.purple,
-                width=4
-            )
+            # self.canvas.create_arc(
+            #     sx0 - arc_r,
+            #     sy0 - arc_r,
+            #     sx0 + arc_r,
+            #     sy0 + arc_r,
+            #     start=start_angle,
+            #     extent=extent,
+            #     style=tk.ARC,
+            #     outline=self.purple,
+            #     width=4
+            # )
             self.canvas.create_text(
                 sx0 + arc_r + 25,
                 sy0 - 25,
@@ -1641,17 +1641,17 @@ class KurvaKonikApp:
             arc_r = 70
             # Konsisten dengan kasus 2 titik: hilangkan negasi pada start/extent
             start_angle = math.degrees(theta) % 360
-            self.canvas.create_arc(
-                sx0 - arc_r,
-                sy0 - arc_r,
-                sx0 + arc_r,
-                sy0 + arc_r,
-                start=start_angle,
-                extent=math.degrees(theta),
-                style=tk.ARC,
-                outline=self.purple,
-                width=4
-            )
+            # self.canvas.create_arc(
+            #     sx0 - arc_r,
+            #     sy0 - arc_r,
+            #     sx0 + arc_r,
+            #     sy0 + arc_r,
+            #     start=start_angle,
+            #     extent=math.degrees(theta),
+            #     style=tk.ARC,
+            #     outline=self.purple,
+            #     width=4
+            # )
             deg = math.degrees(theta)
 
             self.canvas.create_text(
