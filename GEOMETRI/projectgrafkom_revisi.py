@@ -58,6 +58,8 @@ class KurvaKonikApp:
         self.current_curve = tk.StringVar(value="Lingkaran")
         self.show_number = tk.BooleanVar(value=True)
         self.show_active_label = tk.BooleanVar(value=True)
+        self.show_helpers = tk.BooleanVar(value=True)   # garis putus sin/cos/tan di visual
+        self.show_rays = tk.BooleanVar(value=True)      # garis ungu ray ke pusat
 
         self.inputs = {}
         self.dynamic_form_frame = None
@@ -166,11 +168,7 @@ class KurvaKonikApp:
         tk.Button(row1, text="Pause/Play", bg="#E5E7EB", relief="flat", pady=6, command=self.toggle_pause).pack(side="left", fill="x", expand=True, padx=(0, 3))
         tk.Button(row1, text="Selesai", bg="#E5E7EB", relief="flat", pady=6, command=self.finish_curve).pack(side="left", fill="x", expand=True, padx=(3, 0))
 
-        row2 = tk.Frame(button_frame, bg=self.panel_bg)
-        row2.pack(fill="x", pady=3)
 
-        tk.Button(row2, text="Zoom In", bg="#E5E7EB", relief="flat", pady=6, command=self.zoom_in).pack(side="left", fill="x", expand=True, padx=(0, 3))
-        tk.Button(row2, text="Zoom Out", bg="#E5E7EB", relief="flat", pady=6, command=self.zoom_out).pack(side="left", fill="x", expand=True, padx=(3, 0))
 
         tk.Button(
             button_frame,
@@ -183,15 +181,7 @@ class KurvaKonikApp:
             command=self.reset_all
         ).pack(fill="x", pady=3)
 
-        # Tombol cepat untuk mode visualisasi sudut (klik 2 titik lalu tekan tombol ini)
-        tk.Button(
-            button_frame,
-            text="Tampilkan Sudut (2 titik ke pusat)",
-            bg="#E5E7EB",
-            relief="flat",
-            pady=6,
-            command=self.show_angle_from_two_points
-        ).pack(fill="x", pady=3)
+
 
 
         tk.Checkbutton(
@@ -207,6 +197,24 @@ class KurvaKonikApp:
             left_panel,
             text="Tampilkan label titik aktif",
             variable=self.show_active_label,
+            command=self.draw_all,
+            bg=self.panel_bg,
+            activebackground=self.panel_bg
+        ).pack(anchor="w", padx=16, pady=(0, 2))
+
+        tk.Checkbutton(
+            left_panel,
+            text="Tampilkan sin/cos/tan (garis helper)",
+            variable=self.show_helpers,
+            command=self.draw_all,
+            bg=self.panel_bg,
+            activebackground=self.panel_bg
+        ).pack(anchor="w", padx=16, pady=(0, 2))
+
+        tk.Checkbutton(
+            left_panel,
+            text="Tampilkan garis sudut (ray ungu)",
+            variable=self.show_rays,
             command=self.draw_all,
             bg=self.panel_bg,
             activebackground=self.panel_bg
@@ -278,7 +286,37 @@ class KurvaKonikApp:
             wraplength=285,
             font=("Consolas", 9)
         )
-        self.point_info.pack(fill="x", padx=18, pady=(2, 8))
+        self.point_info.pack(fill="x", padx=18, pady=(2, 4))
+
+        tk.Label(
+            left_panel,
+            text="Karakteristik & Analisis",
+            bg=self.panel_bg,
+            fg=self.bg_dark,
+            font=("Arial", 10, "bold")
+        ).pack(anchor="w", padx=18, pady=(4, 0))
+
+        self.char_label = tk.Label(
+            left_panel,
+            text="-",
+            bg="#E0E7FF",
+            fg="#1E3A8A",
+            justify="left",
+            wraplength=285,
+            font=("Consolas", 8)
+        )
+        self.char_label.pack(fill="x", padx=18, pady=(2, 2))
+
+        self.step_label = tk.Label(
+            left_panel,
+            text="-",
+            bg="#FEF3C7",
+            fg="#92400E",
+            justify="left",
+            wraplength=285,
+            font=("Consolas", 8)
+        )
+        self.step_label.pack(fill="x", padx=18, pady=(2, 8))
 
         # Canvas dan proses menggunakan desain pertama:
         # canvas besar di kanan, proses perhitungan di bawah canvas.
@@ -356,27 +394,26 @@ class KurvaKonikApp:
             self.add_entry("t akhir", "100")
             self.add_entry("Interval / step", "2.5")
             self.formula_label.config(
-                text="x = xc + t\ny = yc + a t²"
+                text="x = xc + 2 a t\ny = yc + a t²"
             )
 
         elif curve == "Hiperbola":
             self.add_entry("Parameter a", "45")
             self.add_entry("Parameter b", "35")
-            self.add_entry("t awal", "-2")
-            self.add_entry("t akhir", "2")
+            self.add_entry("t awal", "-1.4")
+            self.add_entry("t akhir", "1.4")
             self.add_entry("Interval / step", "0.05")
             self.formula_label.config(
                 text=(
-                    "Kanan: x = xc + a cosh(t)\n"
-                    "Kiri : x = xc - a cosh(t)\n"
-                    "y = yc + b sinh(t)\n"
-                    "t=0 menunjukkan vertex pada setiap cabang"
+                    "Kanan: x = xc + a sec(t)\n"
+                    "Kiri : x = xc - a sec(t)\n"
+                    "y = yc + b tan(t)\n"
+                    "Cabang kanan t ∈ (-π/2, π/2)"
                 )
             )
 
         self.draw_all()
-
-    def add_entry(self, label, default):
+    def add_entry(self, label, default, from_=-200, to=200, res=1):
         row = tk.Frame(self.dynamic_form_frame, bg=self.panel_bg)
         row.pack(fill="x", pady=2)
 
@@ -387,12 +424,35 @@ class KurvaKonikApp:
             fg=self.bg_dark,
             anchor="w",
             font=("Arial", 9)
-        ).pack(side="left", fill="x", expand=True)
+        ).pack(side="left")
 
-        entry = tk.Entry(row, width=10, font=("Arial", 9))
-        entry.insert(0, default)
+        var = tk.StringVar(value=default)
+        entry = tk.Entry(row, width=8, font=("Arial", 9), textvariable=var)
         entry.pack(side="right")
         self.inputs[label] = entry
+        
+        # Identify ranges based on label to make sliders more useful
+        if "Interval" in label or "step" in label:
+            from_, to, res = 0.01, 10, 0.01
+        elif "a" in label.lower() or "b" in label.lower() or "r" in label.lower():
+            from_, to, res = 0.01, 300, 0.1
+            if "Parabola" in self.current_curve.get() and "a" in label.lower():
+                from_, to, res = -10, 10, 0.1
+
+        scale = tk.Scale(row, from_=from_, to=to, resolution=res, orient="horizontal", 
+                         bg=self.panel_bg, highlightthickness=0, showvalue=0)
+        try: scale.set(float(default))
+        except: pass
+        scale.pack(side="right", fill="x", expand=True, padx=5)
+
+        def on_scale(val):
+            var.set(val)
+        def on_entry(*args):
+            try: scale.set(float(var.get()))
+            except: pass
+            
+        scale.config(command=on_scale)
+        var.trace_add("write", on_entry)
 
     def change_curve(self, curve_name):
         self.stop_timer()
@@ -402,6 +462,52 @@ class KurvaKonikApp:
         self.process_text.delete("1.0", "end")
         self.add_process(f"Jenis kurva diganti menjadi {curve_name}.")
         self.add_process("Input parameter sudah disesuaikan dengan rumus kurva.")
+        self.update_characteristics()
+        self.canvas.focus_set()
+
+    def update_characteristics(self):
+        try:
+            curve = self.current_curve.get()
+            cx = float(self.inputs["Pusat X / xc"].get())
+            cy = float(self.inputs["Pusat Y / yc"].get())
+            
+            c_text = ""
+            s_text = ""
+            if curve == "Lingkaran":
+                r = float(self.inputs["Jari-jari r"].get())
+                step = float(self.inputs["Interval / step"].get())
+                c_text = f"Karakteristik & Efek Parameter:\n- r ({r}): Menentukan besaran/jari-jari kurva.\n- Fokus berada di pusat ({cx}, {cy}).\n- Eksentrisitas e=0 (simetri bundar sempurna)."
+                n = int(2*math.pi/step) if step>0 else 0
+                s_text = f"Analisis Step (Trade-off):\n- Step besar (>0.5): Kurva membentuk poligon karena jarak sudut rad terlalu jauh.\n- Step kecil: Mulus tapi komputasi ({n} titik) berat.\n-> Visual saat ini: {'MULUS' if n>40 else 'POLIGON/KASAR'}."
+            elif curve == "Elips":
+                a = float(self.inputs["Parameter a"].get())
+                b = float(self.inputs["Parameter b"].get())
+                step = float(self.inputs["Interval / step"].get())
+                c = math.sqrt(abs(a*a - b*b))
+                e = c/max(a,b) if max(a,b)>0 else 0
+                c_text = f"Karakteristik & Efek Parameter:\n- a ({a}): Jari-jari horizontal.\n- b ({b}): Jari-jari vertikal.\n- Fokus berjarak c={c:.2f} dari pusat. e={e:.3f} (0<e<1)."
+                n = int(2*math.pi/step) if step>0 else 0
+                s_text = f"Analisis Step (Trade-off):\n- Step besar (>0.5): Kurva terpotong menjadi garis lurus (poligon).\n- Step kecil: Render halus namun lag pada kalkulasi iteratif.\n-> Visual saat ini: {'MULUS' if n>40 else 'POLIGON/KASAR'}."
+            elif curve == "Parabola":
+                a = float(self.inputs["Parameter a"].get())
+                step = float(self.inputs["Interval / step"].get())
+                p = 1/(4*a) if a!=0 else 0
+                c_text = f"Karakteristik & Efek Parameter:\n- a ({a}): Menentukan tingkat kecekungan / lebar bukaan.\n- Vertex di ({cx}, {cy}).\n- Jarak Fokus p={p:.2f} di ({cx}, {cy+p:.2f}). e=1."
+                s_text = f"Analisis Step (Trade-off):\n- Parabola tak berhingga. Step memengaruhi delta x. Step besar ({step}) membuat titik renggang & kaku.\n- Step kecil memperberat memori array.\n-> Visual saat ini: {'KASAR' if step>2 else 'MULUS'}."
+            elif curve == "Hiperbola":
+                a = float(self.inputs["Parameter a"].get())
+                b = float(self.inputs["Parameter b"].get())
+                step = float(self.inputs["Interval / step"].get())
+                c = math.sqrt(a*a + b*b)
+                e = c/a if a>0 else 0
+                c_text = f"Karakteristik & Efek Parameter:\n- a ({a}): Jarak pusat ke puncak.\n- b ({b}): Mengatur kemiringan asimtot.\n- Fokus di c={c:.2f}. e={e:.3f} (e>1)."
+                s_text = f"Analisis Step (Trade-off):\n- cosh/sinh naik eksponensial. Step besar menghasilkan loncatan koordinat yang drastis di ujung.\n- Step kecil lambat di render tapi lengkungan presisi.\n-> Visual saat ini: {'AKURAT/BERAT' if step<0.1 else 'KASAR/CEPAT'}."
+            
+            if hasattr(self, 'char_label'):
+                self.char_label.config(text=c_text)
+                self.step_label.config(text=s_text)
+        except Exception:
+            pass
 
     # ==========================================================
     # KEYBOARD
@@ -447,6 +553,9 @@ class KurvaKonikApp:
 
         self.root.bind_all("<Up>", self.run_shortcut_if_not_typing(self.increase_step))
         self.root.bind_all("<Down>", self.run_shortcut_if_not_typing(self.decrease_step))
+
+        self.root.bind_all("<f>", self.run_shortcut_if_not_typing(self.auto_fit_curve))
+        self.root.bind_all("<F>", self.run_shortcut_if_not_typing(self.auto_fit_curve))
 
         self.root.bind_all("1", self.run_shortcut_if_not_typing(lambda: self.change_curve("Lingkaran")))
         self.root.bind_all("2", self.run_shortcut_if_not_typing(lambda: self.change_curve("Elips")))
@@ -509,19 +618,19 @@ class KurvaKonikApp:
             formula = f"x={xc}+{a}cos({t:.2f}), y={yc}+{b}sin({t:.2f})"
 
         elif curve == "Parabola":
-            x = xc + t
+            x = xc + 2 * a * t
             y = yc + a * (t ** 2)
-            formula = f"x={xc}+{t:.2f}, y={yc}+{a}({t:.2f})²"
+            formula = f"x={xc}+2*{a}({t:.2f}), y={yc}+{a}({t:.2f})²"
 
         elif curve == "Hiperbola":
-            y = yc + b * math.sinh(t)
+            y = yc + b * math.tan(t)
 
             if branch == "kiri":
-                x = xc - a * math.cosh(t)
-                formula = f"x={xc}-{a}cosh({t:.2f}), y={yc}+{b}sinh({t:.2f})"
+                x = xc - a / math.cos(t)
+                formula = f"x={xc}-{a}sec({t:.2f}), y={yc}+{b}tan({t:.2f})"
             else:
-                x = xc + a * math.cosh(t)
-                formula = f"x={xc}+{a}cosh({t:.2f}), y={yc}+{b}sinh({t:.2f})"
+                x = xc + a / math.cos(t)
+                formula = f"x={xc}+{a}sec({t:.2f}), y={yc}+{b}tan({t:.2f})"
 
         else:
             x = 0
@@ -599,8 +708,8 @@ class KurvaKonikApp:
         elif curve == "Hiperbola":
             a = self.get_value("Parameter a", 45)
             b = self.get_value("Parameter b", 35)
-            t_start = self.get_value("t awal", -2)
-            t_end = self.get_value("t akhir", 2)
+            t_start = self.get_value("t awal", -1.4)
+            t_end = self.get_value("t akhir", 1.4)
 
             if a <= 0 or b <= 0:
                 raise ValueError("Parameter a dan b harus lebih dari 0.")
@@ -657,7 +766,9 @@ class KurvaKonikApp:
     # ==========================================================
     def generate_curve(self):
         try:
+            self.canvas.focus_set()
             self.stop_timer()
+            self.update_characteristics()
 
             self.frames, param = self.generate_frames_from_input()
             self.visible_count = 0
@@ -897,6 +1008,42 @@ class KurvaKonikApp:
         except ValueError as e:
             messagebox.showerror("Input salah", str(e))
 
+    def auto_fit_curve(self):
+        if not self.frames:
+            return
+        
+        all_x = []
+        all_y = []
+        for f in self.frames:
+            for p in f["points"]:
+                all_x.append(p["x"])
+                all_y.append(p["y"])
+        
+        if not all_x: return
+        
+        min_x, max_x = min(all_x), max(all_x)
+        min_y, max_y = min(all_y), max(all_y)
+        
+        w = self.canvas.winfo_width()
+        h = self.canvas.winfo_height()
+        if w < 10 or h < 10: return
+        
+        rng_x = max_x - min_x if max_x != min_x else 1
+        rng_y = max_y - min_y if max_y != min_y else 1
+        
+        sx = (w * 0.8) / rng_x
+        sy = (h * 0.8) / rng_y
+        new_scale = min(sx, sy)
+        self.scale = max(0.1, min(new_scale, 20.0))
+        
+        cx_w = (min_x + max_x) / 2
+        cy_w = (min_y + max_y) / 2
+        
+        self.offset_x = (w / 2) - (cx_w * self.scale)
+        self.offset_y = (h / 2) + (cy_w * self.scale)
+        
+        self.draw_all()
+
     def reset_data_only(self):
         self.stop_timer()
         self.frames.clear()
@@ -972,6 +1119,151 @@ class KurvaKonikApp:
         self.draw_active_rays_and_angles()
         self.draw_title()
         self.update_status()
+        self.draw_info_box_and_legend()
+
+    def draw_info_box_and_legend(self):
+        w = self.canvas.winfo_width()
+        h = self.canvas.winfo_height()
+        if w < 50 or h < 50:
+            return
+
+        curve = self.current_curve.get()
+
+        # ── Ambil sudut dari draw_active_rays_and_angles (sudah dijalankan sebelumnya) ──
+        angles      = getattr(self, "_last_angles", [])
+        sel_points  = getattr(self, "_last_points_for_angle", [])
+
+        # ── Bangun baris keterangan ──────────────────────────────────────────
+        lines = []
+
+        try:
+            xc = self.get_value("Pusat X / xc", 0)
+            yc = self.get_value("Pusat Y / yc", 0)
+            step_val = self.get_value("Interval / step", 0.08)
+        except Exception:
+            xc, yc = 0, 0
+            step_val = 0.08
+
+        # --- Koordinat Pusat ---
+        lines.append(("● Koordinat Pusat", self.center_color, True))
+        lines.append((f"  ({xc:.3f}, {yc:.3f})", self.center_color, False))
+        lines.append(("", "#999", False))
+
+        # --- Titik terpilih / aktif ---
+        if sel_points:
+            frames_vis = self.visible_frames()
+
+            def frame_of(pt):
+                for fi, fr in enumerate(frames_vis):
+                    for pp in fr["points"]:
+                        if pp is pt:
+                            return fr["frame"]
+                return "-"
+
+            # Cek apakah klik tunggal atau klik ganda (panjang list 1, atau 2 tapi double_click_active)
+            is_single = len(sel_points) == 1
+
+            if is_single:
+                pt  = sel_points[0]
+                fno = frame_of(pt)
+                lines.append(("● Titik Aktif", self.line_color, True))
+                lines.append((f"  Interval ke-{fno}", "#374151", False))
+                lines.append((f"  ({pt['x']:.3f}, {pt['y']:.3f})", "#1D4ED8", False))
+                
+                # Jika double click aktif pada titik yang sama, tampilkan rumus t = step * interval
+                if getattr(self, "double_click_active", False):
+                    try:
+                        fval = int(fno)
+                    except ValueError:
+                        fval = 0
+                    lines.append((f"  Total t = {step_val:.2f} * {fval} = {pt['t']:.2f}", "#7C3AED", False))
+                lines.append(("", "#999", False))
+
+            else:
+                # — Dua titik berbeda terpilih —
+                lines.append(("● Titik Terpilih", self.line_color, True))
+                for idx, pt in enumerate(sel_points):
+                    fno = frame_of(pt)
+                    lines.append((f"  [{idx+1}] Interval ke-{fno}", "#374151", False))
+                    lines.append((f"      ({pt['x']:.3f}, {pt['y']:.3f})", "#1D4ED8", False))
+                    if idx < len(angles):
+                        deg = math.degrees(angles[idx])
+                        lines.append((f"      Sudut = {deg:.2f}°", self.purple, False))
+                    lines.append(("", "#999", False))
+
+                # Total t (penjumlahan dari t1 dan t2)
+                t1 = sel_points[0]["t"]
+                t2 = sel_points[1]["t"]
+                try:
+                    fval1 = int(frame_of(sel_points[0]))
+                except ValueError:
+                    fval1 = 0
+                try:
+                    fval2 = int(frame_of(sel_points[1]))
+                except ValueError:
+                    fval2 = 0
+                
+                lines.append(("● Total t", "#7C3AED", True))
+                lines.append((f"  t1 = {step_val:.2f} * {fval1} = {t1:.2f}", "#7C3AED", False))
+                lines.append((f"  t2 = {step_val:.2f} * {fval2} = {t2:.2f}", "#7C3AED", False))
+                lines.append((f"  t1+t2 = {t1:.2f} + {t2:.2f} = {t1+t2:.2f}", "#7C3AED", False))
+                lines.append(("", "#999", False))
+
+                # Selisih sudut
+                if len(angles) == 2:
+                    d1 = math.degrees(angles[0])
+                    d2 = math.degrees(angles[1])
+                    delta = d2 - d1
+                    while delta <= -180: delta += 360
+                    while delta > 180:  delta -= 360
+                    total_deg = abs(d1) + abs(d2)
+                    lines.append(("● Selisih Sudut (Δθ)", self.purple, True))
+                    lines.append((f"  |θ2 - θ1| = {abs(delta):.2f}°", self.purple, False))
+                    lines.append((f"  |θ1|+|θ2| = {total_deg:.2f}°", self.purple, False))
+                    lines.append(("", "#999", False))
+        else:
+            lines.append(("● Titik Aktif", self.line_color, True))
+            lines.append(("  (belum ada titik dipilih)", "#999999", False))
+            lines.append(("", "#999", False))
+
+        # --- Legenda warna ---
+        lines.append(("● Legenda Warna", self.bg_dark, True))
+        lines.append(("  ● Titik Biasa  (merah)", self.point_color, False))
+        lines.append(("  ★ Titik Aktif  (kuning)", self.active_color, False))
+        lines.append(("  ● Titik Pusat  (hijau)", self.center_color, False))
+        lines.append(("  — Ray sudut   (ungu)", self.purple, False))
+
+        # ── Render kotak pojok kanan atas ───────────────────────────────────
+        line_h = 16
+        pad_x  = 10
+        pad_y  = 10
+        box_w  = 220
+        box_h  = pad_y * 2 + 14 + len(lines) * line_h
+        x0     = w - box_w - 12
+        y0     = 26  # tepat di bawah judul pojok kiri
+
+        self.canvas.create_rectangle(
+            x0, y0, x0 + box_w, y0 + box_h,
+            fill=self.panel_bg, outline=self.grid_color, width=1
+        )
+        self.canvas.create_text(
+            x0 + pad_x, y0 + 5,
+            text="KETERANGAN",
+            fill=self.bg_dark,
+            font=("Arial", 9, "bold"),
+            anchor="nw"
+        )
+
+        for i, (txt, clr, bold) in enumerate(lines):
+            fy  = y0 + pad_y + 12 + i * line_h
+            fnt = ("Consolas", 8, "bold") if bold else ("Consolas", 8)
+            self.canvas.create_text(
+                x0 + pad_x, fy,
+                text=txt,
+                fill=clr,
+                font=fnt,
+                anchor="nw"
+            )
 
 
     def draw_grid(self):
@@ -1108,6 +1400,17 @@ class KurvaKonikApp:
                             font=("Arial", 8, "bold")
                         )
 
+                # Koordinat kecil samar di setiap titik interval
+                coord_text = f"({p['x']:.1f},{p['y']:.1f})"
+                self.canvas.create_text(
+                    sx + 6,
+                    sy + 10,
+                    text=coord_text,
+                    fill="#AAAAAA",
+                    anchor="w",
+                    font=("Arial", 7)
+                )
+
         if self.show_active_label.get():
             self.draw_active_label()
 
@@ -1176,7 +1479,13 @@ class KurvaKonikApp:
 
         sx, sy = self.world_to_screen(xc, yc)
         self.canvas.create_oval(sx - 6, sy - 6, sx + 6, sy + 6, fill=self.center_color, outline="white")
-        self.canvas.create_text(sx + 10, sy + 10, text="Pusat", anchor="nw", fill=self.center_color, font=("Arial", 9, "bold"))
+        self.canvas.create_text(
+            sx + 10, sy + 10,
+            text=f"Pusat ({xc:.1f}, {yc:.1f})",
+            anchor="nw",
+            fill=self.center_color,
+            font=("Arial", 9, "bold")
+        )
 
     def get_active_point(self):
         if self.active_frame_index is None:
@@ -1195,6 +1504,8 @@ class KurvaKonikApp:
         return frame["points"][0]
 
     def draw_curve_helpers(self):
+        if not self.show_helpers.get():
+            return
         curve = self.current_curve.get()
         if curve in ("Lingkaran", "Elips"):
             self.draw_circle_ellipse_helpers()
@@ -1396,7 +1707,7 @@ class KurvaKonikApp:
         )
 
     def draw_active_rays_and_angles(self):
-        """Gambar ray + busur sudut dari pusat.
+        """Gambar ray (garis ungu) dari pusat ke titik terpilih.
 
         Prioritas titik:
         1) selected_points (2 titik terakhir yang diklik)
@@ -1411,8 +1722,8 @@ class KurvaKonikApp:
         if not hasattr(self, "selected_points"):
             self.selected_points = []
 
-        if len(self.selected_points) >= 2:
-            points = self.selected_points[-2:]
+        if self.selected_points:
+            points = self.selected_points
         else:
             point = self.get_active_point()
             points = [point] if point else []
@@ -1420,6 +1731,7 @@ class KurvaKonikApp:
         if not points:
             return
 
+        # Hitung sudut untuk semua titik (selalu, agar legend bisa pakai data ini)
         sx0, sy0 = self.world_to_screen(xc, yc)
         angles = []
 
@@ -1431,80 +1743,23 @@ class KurvaKonikApp:
             theta = math.atan2(dy, dx)
             angles.append(theta)
 
-            sx, sy = self.world_to_screen(p["x"], p["y"])
-            self.canvas.create_line(sx0, sy0, sx, sy, fill=self.purple, width=3)
-            self.canvas.create_text(sx + 10, sy - 10, text=f"θ={theta:.2f}", fill=self.purple, anchor="w", font=("Arial", 9, "bold"))
+            # Hanya gambar garis ungu jika toggle aktif
+            if self.show_rays.get():
+                sx, sy = self.world_to_screen(p["x"], p["y"])
+                self.canvas.create_line(sx0, sy0, sx, sy, fill=self.purple, width=3)
 
-        if len(angles) == 2:
-            theta1, theta2 = angles
-            start = math.degrees(theta1)
-            end = math.degrees(theta2)
-            
-            extent = end - start
-            while extent <= -180:
-                    extent += 360
-                
-            while extent > 180:
-                    extent -= 360
-
-            # Tkinter arc: extent positif menggambar searah jarum jam (default).
-            # Logika sebelumnya membuatnya “terbalik”, jadi hapus negasi.
-            arc_r = 70
-            start_angle = start % 360
-            self.canvas.create_arc(
-                sx0 - arc_r,
-                sy0 - arc_r,
-                sx0 + arc_r,
-                sy0 + arc_r,
-                start=start_angle,
-                extent=extent,
-                style=tk.ARC,
-                outline=self.purple,
-                width=4
-            )
-            self.canvas.create_text(
-                sx0 + arc_r + 25,
-                sy0 - 25,
-                text=f"Δθ={abs(extent):.2f}°",
-                fill=self.purple,
-                anchor="w",
-                font=("Arial", 9, "bold")
-            )
-
-        elif len(angles) == 1:
-            theta = angles[0]
-            arc_r = 70
-            # Konsisten dengan kasus 2 titik: hilangkan negasi pada start/extent
-            start_angle = math.degrees(theta) % 360
-            self.canvas.create_arc(
-                sx0 - arc_r,
-                sy0 - arc_r,
-                sx0 + arc_r,
-                sy0 + arc_r,
-                start=start_angle,
-                extent=math.degrees(theta),
-                style=tk.ARC,
-                outline=self.purple,
-                width=4
-            )
-            deg = math.degrees(theta)
-
-            self.canvas.create_text(
-                    sx0 + arc_r + 12,
-                    sy0 - 8,
-                    text=f"{deg:.1f}°",
-                    fill=self.purple,
-                    anchor="w",
-                    font=("Arial", 9, "bold")
-                )
+        # Simpan ke atribut agar draw_info_box_and_legend bisa membaca sudut & titik
+        self._last_angles = angles
+        self._last_points_for_angle = [p for p in points if p is not None]
 
     def draw_title(self):
+        # Pojok kiri atas, font kecil, tidak menghalangi canvas
         self.canvas.create_text(
-            self.canvas.winfo_width() / 2,
-            28,
-            text="REPRESENTASI PARAMETRIK KURVA KONIK",
+            12, 10,
+            text="Representasi Parametrik Kurva Konik",
             fill=self.bg_dark,
-            font=("Arial", 15, "bold")
+            font=("Arial", 10, "bold"),
+            anchor="nw"
         )
 
     # INFO
@@ -1513,13 +1768,33 @@ class KurvaKonikApp:
         self.active_frame_index = frame_index
         self.active_point_branch = point.get("branch")
 
-        # Simpan 2 titik terakhir yang diklik (untuk menampilkan sudut dari 2 titik ke pusat)
         if not hasattr(self, "selected_points"):
             self.selected_points = []
-        self.selected_points.append(point)
-        # simpan maksimal 2 titik
-        if len(self.selected_points) > 2:
-            self.selected_points = self.selected_points[-2:]
+            self.double_click_active = False
+
+        # Cek apakah titik yang diklik sama dengan titik terakhir
+        # (identitas object ATAU frame + branch sama)
+        def same_as_last(new_pt):
+            if not self.selected_points:
+                return False
+            last = self.selected_points[-1]
+            if last is new_pt:
+                return True
+            # bandingkan berdasarkan nilai koordinat (float sama)
+            return (last.get("frame") == new_pt.get("frame") and
+                    last.get("branch") == new_pt.get("branch") and
+                    abs(last["x"] - new_pt["x"]) < 1e-9 and
+                    abs(last["y"] - new_pt["y"]) < 1e-9)
+
+        if same_as_last(point):
+            # Klik ganda pada titik yang sama: pertahankan hanya 1 titik
+            self.selected_points = [point]
+            self.double_click_active = True
+        else:
+            self.selected_points.append(point)
+            self.double_click_active = False
+            if len(self.selected_points) > 2:
+                self.selected_points = self.selected_points[-2:]
 
         self.show_point_info(point, frame)
         self.add_process(
@@ -1617,6 +1892,7 @@ class KurvaKonikApp:
         self.draw_all()
 
     def start_drag(self, event):
+        self.canvas.focus_set()
         self.drag_start_x = event.x
         self.drag_start_y = event.y
 
